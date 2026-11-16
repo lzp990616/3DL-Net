@@ -1,47 +1,44 @@
+![3DL-Net — Dilated Dendritic Learning for Medical Image Segmentation](assets/3dlnet-header.svg)
+
 <div align="center">
 
-# 3DL-Net
+**[Read the paper](https://doi.org/10.1016/j.eswa.2024.125874)** &nbsp; · &nbsp; **[Explore the model](model_net.py)** &nbsp; · &nbsp; **[Run an experiment](#run-an-experiment)** &nbsp; · &nbsp; **[Cite this work](#citation)**
 
-### Dilated Dendritic Learning for Medical Image Segmentation
-
-**Global context · Local detail · Dendritic learning**
-
-[![Paper](https://img.shields.io/badge/Paper-ESWA%202025-3776AB?style=flat-square)](https://doi.org/10.1016/j.eswa.2024.125874)
-[![Open Access](https://img.shields.io/badge/Open_Access-Yes-2EA44F?style=flat-square)](https://doi.org/10.1016/j.eswa.2024.125874)
-[![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](https://pytorch.org/)
-
-[Paper](https://doi.org/10.1016/j.eswa.2024.125874) · [Setup](#setup) · [Data](#data-preparation) · [Training](#training) · [Citation](#citation)
+*Expert Systems with Applications · Volume 264 · Article 125874 · 2025*
 
 </div>
 
 ## Overview
 
-3DL-Net combines multi-scale dilated convolutions for global context with dendritic neuron modules for local feature refinement, trained with deep supervision. This repository contains the PyTorch model implementation, four-fold training and comparison scripts, and prediction/visualization utilities.
+Accurate medical image segmentation requires both broad spatial context and fine local detail. **3DL-Net** brings these together through multi-scale dilated convolutions and biologically inspired dendritic learning.
 
-**Paper:** *Dilated dendritic learning of global–local feature representation for medical image segmentation*  
-**Authors:** Zhipeng Liu, Yaotong Song, Junyan Yi, Zhiming Zhang, Masaaki Omura, Zhenyu Lei and Shangce Gao  
-**Publication:** *Expert Systems with Applications*, Volume 264, Article 125874, 2025  
-**DOI:** [10.1016/j.eswa.2024.125874](https://doi.org/10.1016/j.eswa.2024.125874)
+This repository accompanies **Dilated dendritic learning of global–local feature representation for medical image segmentation** by Zhipeng Liu and colleagues. It includes the PyTorch model, four-fold experiments, baseline comparisons and visualization utilities.
 
-## Method at a Glance
+## How It Works
 
-The diagram is a conceptual overview. See the paper for the full architecture and [`model_net.py`](model_net.py) for the implementation (`RRCNet`).
+![Conceptual architecture: image to DSNet, dendritic refinement, DMNet and residual combination for segmentation](assets/3dlnet-architecture.svg)
 
-```mermaid
-flowchart LR
-    A[Medical image] --> B[DSNet: preliminary segmentation]
-    B --> C[DMNet: missed-region refinement]
-    C --> D[Segmentation output]
-    E[Dendritic neuron modules] -. Local refinement .-> B
-    E -. Local refinement .-> C
-```
+1. **Build an initial segmentation.** DSNet extracts image features through an encoder–decoder with deep supervision.
+2. **Refine local representations.** Dendritic neuron modules learn channel-level feature interactions.
+3. **Recover contextual information.** DMNet combines multi-scale context and dendritic refinement with the preliminary output.
 
-- **DSNet:** encoder–decoder segmentation with deep supervision.
-- **DMNet:** multi-scale dilated convolutions for contextual refinement.
-- **DNM:** dendritic learning for local feature representation.
+The figure is a conceptual reading guide. The paper describes the full architecture; the implementation is named `RRCNet` in [`model_net.py`](model_net.py).
 
-## Setup
+## Explore the Code
+
+| Start here | What you will find |
+| --- | --- |
+| [`model_net.py`](model_net.py) · [`conv_dnm.py`](conv_dnm.py) | Network architecture and dendritic modules |
+| [`k_folder.py`](k_folder.py) · [`dataset.py`](dataset.py) | Four-fold training, metrics and data loading |
+| [`compare_kfold.py`](compare_kfold.py) | Baseline-model experiments |
+| [`predicted.py`](predicted.py) · [`pic_merged.py`](pic_merged.py) | Prediction export and figure composition |
+
+## Run an Experiment
+
+The scripts retain experiment-specific configuration. Prepare a compatible environment and dataset before running the training command. Expand the guides below for exact paths, dependencies and current implementation details.
+
+<details>
+<summary><b>01 · Set up the environment</b></summary>
 
 ```bash
 git clone https://github.com/lzp990616/3DL-Net.git
@@ -58,7 +55,10 @@ python -m pip install numpy Pillow opencv-python scikit-learn matplotlib tqdm to
 
 **Compatibility:** the main training script has no pinned environment. It imports legacy TorchMetrics APIs including `dice_score` and `precision_recall`; newer releases may need import/API changes. The commands list dependencies, not a verified version lock. Comparison models also import packages such as `einops`, `timm` and `fairscale`.
 
-## Data Preparation
+</details>
+
+<details>
+<summary><b>02 · Prepare images, masks and dataset paths</b></summary>
 
 Obtain datasets separately using the sources and access conditions cited in the paper. For example:
 
@@ -102,7 +102,10 @@ Prediction utilities instead read `data/train/` and `data/val/`. If using `data_
 python data_spilt.py
 ```
 
-## Training
+</details>
+
+<details open>
+<summary><b>03 · Train and evaluate 3DL-Net</b></summary>
 
 Create the log directory before running the script:
 
@@ -134,7 +137,10 @@ The script uses four-fold cross-validation with shuffled splits and Adam optimiz
 - Checkpoint-saving code in `k_folder.py` is commented out, and its parsed `--ckpt` option is not wired into loading. Configure saving/loading if trained weights are needed.
 - These instructions describe the checked-in code; they do not claim a fresh end-to-end reproduction of the paper's results. Refer to the paper for reported metrics and the experimental protocol.
 
-## Comparison Experiments
+</details>
+
+<details>
+<summary><b>04 · Compare baseline models</b></summary>
 
 `compare_kfold.py` provides baseline experiments. Check its model imports and dataset branches before running; they differ from the main script. Example with U-Net on STU:
 
@@ -144,7 +150,10 @@ python compare_kfold.py --data_name stu --model_name unet --log_name ./log/unet_
 
 The comparison DataLoaders currently use a fixed batch size of 12; their parsed `--batch_size` option does not override it. Use matching data, folds and evaluation settings for meaningful comparisons.
 
-## Prediction and Visualization
+</details>
+
+<details>
+<summary><b>05 · Export predictions and visualizations</b></summary>
 
 Prediction scripts require a compatible trained checkpoint and dataset split. Review their script-level paths before running:
 
@@ -163,19 +172,11 @@ python predicted.py --data_name bus --log_name ./log/predict_bus.log
 
 No pretrained `.pth` or `.pt` weights are included in this checkout.
 
-## Repository Guide
+</details>
 
-| File or directory | Purpose |
-| --- | --- |
-| `model_net.py` | 3DL-Net implementation (`RRCNet`) |
-| `conv_dnm.py` | Dendritic neuron modules |
-| `dataset.py` | Dataset classes and image/mask loading |
-| `k_folder.py` | Main four-fold training and evaluation |
-| `compare_kfold.py` | Baseline comparison experiments |
-| `data_spilt.py` | Optional directory-based split |
-| `predicted*.py` | Prediction and image export |
-| `pic_*.py` | Figure and feature visualization |
-| `model/`, `networks/` | Comparison-model implementations |
+## Reproducibility
+
+The examples have been checked against the source code, but are not a new reproduction of the paper's experiments. For comparable results, preserve data splits, dependency versions and evaluation settings. Reported experimental results and dataset references are in the [paper](https://doi.org/10.1016/j.eswa.2024.125874).
 
 ## Citation
 
@@ -196,8 +197,8 @@ If this work is useful to your research, please cite:
 
 ## License and Third-Party Code
 
-This checkout has no top-level license file. Bundled third-party components include their own license files; see those files and the original projects for their terms.
+No top-level license file is included in this repository. Bundled third-party implementations include their own license files; refer to those files and the original projects for their terms.
 
 ## Questions
 
-For code or reproducibility questions, please [open an issue](https://github.com/lzp990616/3DL-Net/issues) with your environment, command and error message.
+[Open an issue](https://github.com/lzp990616/3DL-Net/issues) with your command, environment and error message for code or reproducibility questions.
